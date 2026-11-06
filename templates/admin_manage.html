@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Admin Management</h2>
+            <p class="text-gray-500 mt-1 text-sm">Change the main admin password and add admin accounts.</p>
+        </div>
+        <button type="button" onclick="openPasswordDialog()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors">
+            Change admin01 password
+        </button>
+    </div>
+
+    {% if message %}
+    <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{{ error }}</div>
+    {% endif %}
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        หากยังใช้รหัสผ่านเริ่มต้นอยู่ แนะนำให้เปลี่ยนทันทีเพื่อความปลอดภัย
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-1">Add admin account</h3>
+            <p class="text-sm text-gray-500 mb-5">New admins can use the monitoring pages, but cannot manage admin accounts.</p>
+            <form method="POST" class="space-y-4">
+                <input type="hidden" name="action" value="add-admin">
+                <div>
+                    <label for="new-username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input id="new-username" type="text" name="username" minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]{3,50}" autocomplete="username" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                    <p class="mt-1 text-xs text-gray-500">3-50 characters: letters, numbers, ., _ or -</p>
+                </div>
+                <div>
+                    <label for="new-admin-password" class="block text-sm font-medium text-gray-700 mb-1">New admin password</label>
+                    <input id="new-admin-password" type="password" name="password" minlength="4" autocomplete="new-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                    <p class="mt-1 text-xs text-gray-500">At least 4 characters.</p>
+                </div>
+                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Add admin</button>
+            </form>
+        </section>
+    </div>
+
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
+            <h3 class="font-bold text-gray-800">Admin accounts</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Username</th>
+                        <th class="px-6 py-3 font-semibold">Created</th>
+                        <th class="px-6 py-3 font-semibold">Last password update</th>
+                        <th class="px-6 py-3 font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for admin in admins %}
+                    <tr>
+                        <td class="px-6 py-4 font-medium text-gray-900">{{ admin.username }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ admin.created_at }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ admin.updated_at }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            {% if admin.username != 'admin01' %}
+                            <div class="flex items-center gap-3">
+                                <button type="button" class="admin-reset-trigger font-medium text-indigo-600 hover:text-indigo-800" data-username="{{ admin.username }}">
+                                    Set new password
+                                </button>
+                                <form method="POST" onsubmit="return confirm('Delete this admin account? This cannot be undone.');">
+                                    <input type="hidden" name="action" value="delete-admin">
+                                    <input type="hidden" name="username" value="{{ admin.username }}">
+                                    <button type="submit" class="font-medium text-red-600 hover:text-red-800">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="text-gray-400">Main admin</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<dialog id="admin-reset-dialog" class="w-full max-w-md rounded-xl p-0 shadow-xl backdrop:bg-slate-900/50">
+    <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-800">Set admin password</h3>
+        <button type="button" onclick="closeAdminResetDialog()" class="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800" aria-label="Close dialog">✕</button>
+    </div>
+    <form method="POST" class="space-y-4 p-6">
+        <input type="hidden" name="action" value="reset-admin-password">
+        <input id="reset-target-username" type="hidden" name="target_username">
+        <p class="text-sm text-gray-600">Set a new password for <strong id="reset-target-label" class="text-gray-900"></strong>. The current password is not needed.</p>
+        <div>
+            <label for="reset-new-password" class="block text-sm font-medium text-gray-700 mb-1">New password</label>
+            <input id="reset-new-password" type="password" name="new_password" minlength="4" autocomplete="new-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+        </div>
+        <div>
+            <label for="reset-confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
+            <input id="reset-confirm-password" type="password" name="confirm_password" minlength="4" autocomplete="new-password" required class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="closeAdminResetDialog()" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
+            <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Set password</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const adminResetDialog = document.getElementById('admin-reset-dialog');
+
+    function openAdminResetDialog(username) {
+        document.getElementById('reset-target-username').value = username;
+        document.getElementById('reset-target-label').textContent = username;
+        adminResetDialog.showModal();
+        document.getElementById('reset-new-password').focus();
+    }
+
+    function closeAdminResetDialog() {
+        adminResetDialog.close();
+    }
+
+    document.querySelectorAll('.admin-reset-trigger').forEach((button) => {
+        button.addEventListener('click', () => {
+            openAdminResetDialog(button.dataset.username);
+        });
+    });
+
+    adminResetDialog.addEventListener('click', (event) => {
+        if (event.target === adminResetDialog) closeAdminResetDialog();
+    });
+
+    {% if error and request.form.get('action') == 'reset-admin-password' %}
+    openAdminResetDialog({{ reset_target|tojson }});
+    {% endif %}
+</script>
+{% endblock %}

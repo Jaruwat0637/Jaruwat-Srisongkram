@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
+            <p class="text-gray-500 mt-1 text-sm">Real-time device status and network topology</p>
+            <p id="live-status-message" class="text-xs text-gray-500 mt-1">กำลังตรวจสอบสถานะ...</p>
+        </div>
+        <div>
+            <input type="text" id="dashboard-date" class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2.5 rounded-xl text-center w-[130px] font-medium text-sm cursor-pointer" placeholder="DD/MM/YYYY" readonly>
+        </div>
+    </div>
+
+    <!-- การ์ดสรุปจำนวนอุปกรณ์ทั้งหมด, Online และ Offline; JavaScript เติมค่าจาก API -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-gray-500 text-sm font-medium">Total Devices</h3>
+            <p class="text-3xl font-bold text-blue-600" id="total-devices">0</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-gray-500 text-sm font-medium">Online Status</h3>
+            <p class="text-3xl font-bold text-green-600" id="online-devices">0</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="text-gray-500 text-sm font-medium">Offline Status</h3>
+            <p class="text-3xl font-bold text-red-600" id="offline-devices">0</p>
+        </div>
+    </div>
+
+    <div id="device-detail-panel" class="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden hidden transition-all">
+        <div class="bg-indigo-50 px-6 py-4 border-b border-indigo-100 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Device Detail View
+            </h3>
+            <button onclick="document.getElementById('device-detail-panel').classList.add('hidden')" class="text-indigo-400 hover:text-indigo-600">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6"><div id="inline-device-content"></div></div>
+    </div>
+
+    <!-- ตารางนี้สร้างแถวอุปกรณ์ด้วย JavaScript จากข้อมูลที่โหลดผ่าน /api/devices -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-4 bg-gray-50 border-b border-gray-200">
+            <h3 class="font-bold text-gray-700">Network Device List</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Device Name</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">IP Address</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboard-table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- แผนภาพ topology แสดงความสัมพันธ์ Router -> Core Switch -> Access Switch -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-gray-100 pb-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800">Network Topology</h3>
+                <p class="text-xs text-gray-500 mt-1">Router → Core Switch → Access Switches</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100">● Online</span>
+                <span class="text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded-full border border-red-100">● Offline</span>
+                <button type="button" onclick="zoomTopology(0.8)" class="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50" aria-label="Zoom out">−</button>
+                <button type="button" onclick="fitTopology()" class="px-3 py-1.5 rounded-lg border text-xs hover:bg-gray-50">Fit to View</button>
+                <button type="button" onclick="zoomTopology(1.25)" class="px-3 py-1.5 rounded-lg border text-sm hover:bg-gray-50" aria-label="Zoom in">+</button>
+                <button type="button" onclick="resetTopology()" class="px-3 py-1.5 rounded-lg border text-xs hover:bg-gray-50">Reset</button>
+            </div>
+        </div>
+        <div class="flex justify-center bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+            <div id="topology-network" class="w-full h-[560px]"></div>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-3">เลื่อนเพื่อซูม · ลากพื้นหลังเพื่อเลื่อน · คลิกอุปกรณ์เพื่อดูรายละเอียด</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    // ตั้งรูปแบบวันที่สำหรับปฏิทินด้านบนของ Dashboard
+    flatpickr("#dashboard-date", { dateFormat: "d/m/Y", defaultDate: "today" });
+
+    // เก็บข้อมูลไว้ใช้ซ้ำ: รายการอุปกรณ์ และ instance ของแผนภาพเพื่ออัปเดตโดยไม่สร้างใหม่
+    let allDevicesData = [];
+    let network = null;
+    let networkNodes = null;
+    let networkEdges = null;
+    let statusRefreshInProgress = false;
+    let topologyOptions = null;
+
+    async function loadDashboard() {
+        // ขอข้อมูลอุปกรณ์จาก Flask API แล้วใช้ชุดเดียวกันเติมสรุป ตาราง และแผนภาพ
+        const res = await fetch('/api/devices');
+        if (res.ok) {
+            let devices = await res.json();
+                
+            devices.sort((a, b) => {
+                const getPriority = (dev) => {
+                    const n = dev.name.toLowerCase();
+                    const t = dev.type.toLowerCase();
+                    if (n.includes('main') || t.includes('main')) return 1;
+                    if (n.includes('core') || t.includes('core')) return 2;
+                    if (n.includes('switch') || t.includes('switch')) return 3;
+                    return 4;
+                };
+                return getPriority(a) - getPriority(b) || a.name.localeCompare(b.name, undefined, {numeric: true});
+            });
+
+            // Show endpoints only after they have a valid IPv4 address.
+            const hasValidIPv4 = value => {
+                const octets = (value || '').trim().split('.');
+                return octets.length === 4 && octets.every(octet =>
+                    /^(0|[1-9]\d{0,2})$/.test(octet) && Number(octet) <= 255
+                );
+            };
+            const dashboardDevices = devices.filter(d => {
+                const type = d.type.trim().toLowerCase();
+                return ['router', 'switch'].includes(type)
+                    || (['pc', 'vpc'].includes(type) && hasValidIPv4(d.ip_address));
+            });
+            const topologyDevices = dashboardDevices;
+            allDevicesData = dashboardDevices;
+                
+            // คำนวณตัวเลขสรุปจากสถานะล่าสุดที่ API ส่งกลับมา
+            document.getElementById('total-devices').innerText = dashboardDevices.length;
+            document.getElementById('online-devices').innerText = dashboardDevices.filter(d => d.status === 'Online').length;
+            document.getElementById('offline-devices').innerText = dashboardDevices.filter(d => d.status === 'Offline').length;
+
+            const tbody = document.getElementById('dashboard-table-body');
+
+            tbody.innerHTML = dashboardDevices.map(dev => {
+                const loc = dev.location || 'Server Room';
+                return `
+                    <tr onclick="showInlineDetails(${dev.id})" class="hover:bg-indigo-50 transition-colors cursor-pointer group">
+                        <td class="px-6 py-4 font-bold text-gray-900 group-hover:text-indigo-700">${dev.name}</td>
+                        <td class="px-6 py-4 text-blue-600 font-mono text-sm">${dev.ip_address}</td>
+                        <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600">${loc}</span></td>
+                        <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${dev.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${dev.status}</span></td>
+                    </tr>`;
+            }).join('');
+
+            drawTopology(topologyDevices);
+        }
+    }
+
+    async function refreshLiveStatuses() {
+        // กันการเรียกซ้อน และหยุดอัปเดตเมื่อผู้ใช้ซ่อนแท็บเพื่อลดงานที่ไม่จำเป็น
+        if (statusRefreshInProgress || document.visibilityState !== 'visible') return;
+        statusRefreshInProgress = true;
+        try {
+            await loadDashboard();
+            document.getElementById('live-status-message').innerText =
+                `สถานะจากการตรวจร่วมโดยเซิร์ฟเวอร์ · อัปเดตหน้า ${new Date().toLocaleTimeString()}`;
+        } catch (err) {
+            console.error('Unable to refresh device statuses:', err);
+            document.getElementById('live-status-message').innerText =
+                `ตรวจสอบสถานะไม่สำเร็จ: ${err.message}`;
+        } finally {
+            statusRefreshInProgress = false;
+        }
+    }
+
+    function drawTopology(devices) {
+        // จัดกลุ่มอุปกรณ์และกำหนดชั้นของแผนภาพตามบทบาทในเครือข่าย
+        if (devices.length === 0) return;
+
+        const routers = devices.filter(dev => dev.type.trim().toLowerCase() === 'router');
+        const switches = devices.filter(dev => dev.type.trim().toLowerCase() === 'switch')
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        const endpoints = devices.filter(dev =>
+            ['pc', 'vpc'].includes(dev.type.trim().toLowerCase())
+        );
+        const topologyDevices = [...devices];
+        const coreSwitch = switches.find(dev => /core/i.test(dev.name))
+            || switches.find(dev => /switch\s*0?1\b/i.test(dev.name))
+            || switches[0];
+        const accessSwitches = switches.filter(dev => !coreSwitch || dev.id !== coreSwitch.id);
+        const levels = new Map();
+        routers.forEach(dev => levels.set(dev.id, 0));
+        if (coreSwitch) levels.set(coreSwitch.id, 1);
+        accessSwitches.forEach(dev => levels.set(dev.id, 2));
+        endpoints.forEach(dev => levels.set(dev.id, 3));
+
+        const nodesData = topologyDevices.map(dev => {
+            // สีกรอบของแต่ละอุปกรณ์บอกสถานะ Online/Offline
+            const isOnline = dev.status === 'Online';
+            const type = dev.type.trim().toLowerCase();
+            const isEndpoint = ['pc', 'vpc'].includes(type);
+            const role = type === 'router' ? 'Router'
+                : type === 'switch' && coreSwitch && dev.id === coreSwitch.id ? 'Core Switch'
+                : type === 'switch' ? 'Access Switch'
+                : 'Endpoint';
+
+            return {
+                id: dev.id,
+                label: `${dev.name}\n${dev.ip_address}\n${dev.status}`,
+                title: `${dev.name} · ${dev.ip_address} · ${dev.status}`,
+                shape: isEndpoint ? 'ellipse' : 'box',
+                level: levels.get(dev.id) ?? 2,
+                margin: { top: 12, right: 18, bottom: 12, left: 18 },
+                widthConstraint: { minimum: 150, maximum: 190 },
+                color: {
+                    background: '#ffffff',
+                    border: isOnline ? '#10b981' : '#ef4444',
+                    highlight: { background: '#eff6ff', border: '#3b82f6' }
+                },
+                font: { size: 13, color: '#334155', face: 'Inter', bold: { color: '#0f172a' } },
+                borderWidth: 2,
+                borderWidthSelected: 3,
+                shadow: { enabled: true, color: 'rgba(15, 23, 42, 0.12)', size: 8, x: 0, y: 3 },
+                group: role
+            };
+        });
+
+        const edgesData = [];
+        const addEdge = (from, to, fromDevice, toDevice) => {
+            // สีเส้นบอกว่าสองฝั่งของการเชื่อมต่อออนไลน์ครบหรือไม่
+            const online = fromDevice.status === 'Online' && toDevice.status === 'Online';
+            const color = online ? '#10b981' : '#ef4444';
+            edgesData.push({
+                from, to,
+                color: { color, highlight: color },
+                width: 2,
+                arrows: { to: { enabled: true, scaleFactor: 0.55 } }
+            });
+        };
+
+        if (coreSwitch) {
+            routers.forEach(router => addEdge(router.id, coreSwitch.id, router, coreSwitch));
+            accessSwitches.forEach(sw => addEdge(coreSwitch.id, sw.id, coreSwitch, sw));
+        } else if (routers.length) {
+            accessSwitches.forEach(sw => addEdge(routers[0].id, sw.id, routers[0], sw));
+        }
+        const devicesById = new Map(devices.map(dev => [dev.id, dev]));
+        endpoints.forEach(endpoint => {
+            const parentId = Number(endpoint.parent_id);
+            const parent = devicesById.get(parentId);
+            if (parent && parent.type.trim().toLowerCase() === 'switch') {
+                addEdge(parent.id, endpoint.id, parent, endpoint);
+            }
+        });
+
+        const container = document.getElementById('topology-network');
+        topologyOptions = {
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'UD',
+                    sortMethod: 'directed',
+                    levelSeparation: 110,
+                    nodeSpacing: 190,
+                    treeSpacing: 220,
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true
+                }
+            },
+            edges: {
+                smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.35 },
+                color: { color: '#94a3b8', highlight: '#3b82f6' },
+                width: 2,
+                arrows: { to: { enabled: false } }
+            },
+            physics: false,
+            interaction: { hover: true, dragNodes: true, zoomView: true }
+        };
+
+        // สร้างกราฟครั้งแรก; รอบถัดไปแก้เฉพาะ nodes/edges เพื่อคงการโต้ตอบของกราฟ
+        if (network === null) {
+            networkNodes = new vis.DataSet(nodesData);
+            networkEdges = new vis.DataSet(edgesData);
+            network = new vis.Network(container, { nodes: networkNodes, edges: networkEdges }, topologyOptions);
+            network.on("click", (params) => {
+                if (params.nodes.length > 0) {
+                    showInlineDetails(params.nodes[0]);
+                }
+            });
+        } else {
+            const currentIds = networkNodes.getIds();
+            const nextIds = nodesData.map(node => node.id);
+            networkNodes.remove(currentIds.filter(id => !nextIds.includes(id)));
+            networkNodes.update(nodesData);
+            networkEdges.clear();
+            networkEdges.add(edgesData);
+        }
+    }
+
+    function zoomTopology(factor) {
+        if (!network) return;
+        network.moveTo({ scale: network.getScale() * factor, animation: { duration: 200 } });
+    }
+
+    function fitTopology() {
+        if (network) network.fit({ animation: { duration: 250 } });
+    }
+
+    function resetTopology() {
+        if (network) network.moveTo({ position: { x: 0, y: 0 }, scale: 1, animation: { duration: 250 } });
+    }
+
+    function showInlineDetails(id) {
+        // หาอุปกรณ์จากข้อมูลที่โหลดไว้ แล้วแสดงรายละเอียดในแผงด้านบนของหน้า
+        const dev = allDevicesData.find(d => d.id === id);
+        if (!dev) return;
+
+        let statusDisplay = `<span class="px-3 py-1 rounded-full text-xs font-bold ${dev.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${dev.status}</span>`;
+
+        const interfaceData = [
+            { name: "GigabitEthernet0/0", ip: dev.ip_address !== 'unassigned' ? dev.ip_address : "192.168.1.1", ok: "YES", method: "DHCP", status: dev.status === 'Online' ? "up" : "down", protocol: dev.status === 'Online' ? "up" : "down" },
+            { name: "GigabitEthernet0/1", ip: "unassigned", ok: "YES", method: "NVRAM", status: "down", protocol: "down" }
+        ];
+
+        const listItems = interfaceData.map(iface => {
+            const ipClass = iface.ip === 'unassigned' ? 'text-gray-400' : 'text-blue-600 font-medium';
+            let statusHtml = iface.status.includes('down') ? `<span class="text-red-500 font-medium">▼ ${iface.status}</span>` : `<span class="text-green-500 font-medium">▲ ${iface.status}</span>`;
+            let protocolHtml = iface.protocol === 'down' ? `<span class="text-red-500 font-medium">▼ down</span>` : `<span class="text-green-500 font-medium">▲ up</span>`;
+
+            return `
+            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <td class="py-3 px-4 font-mono text-sm">${iface.name}</td>
+                <td class="py-3 px-4 font-mono text-sm ${ipClass}">${iface.ip}</td>
+                <td class="py-3 px-4 text-sm font-bold text-green-600">${iface.ok}</td>
+                <td class="py-3 px-4 font-mono text-sm text-gray-500">${iface.method}</td>
+                <td class="py-3 px-4 text-sm">${statusHtml}</td>
+                <td class="py-3 px-4 text-sm">${protocolHtml}</td>
+            </tr>`;
+        }).join('');
+
+        const content = `
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Device Name</div>
+                    <div class="font-bold text-gray-900 text-lg">${dev.name}</div>
+                    <div class="mt-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">IP Address</div>
+                    <div class="text-blue-600 font-mono">${dev.ip_address}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</div>
+                    <div class="text-gray-800 font-medium">${dev.type || '-'}</div>
+                    <div class="mt-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Location</div>
+                    <div class="text-gray-800 font-medium">${dev.location || 'Server Room'}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Category</div>
+                    <div class="text-gray-800 font-medium">${dev.category || '-'}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</div>
+                    <div class="mt-1">${statusDisplay}</div>
+                </div>
+            </div>
+            
+            <div class="mt-4 bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Interface</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">IP Address</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">OK?</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Protocol</th>
+                        </tr>
+                    </thead>
+                    <tbody>${listItems}</tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('inline-device-content').innerHTML = content;
+        document.getElementById('device-detail-panel').classList.remove('hidden');
+        document.getElementById('device-detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // โหลดทันทีเมื่อเปิดหน้า แล้วรีเฟรชข้อมูลหน้าเว็บทุก 5 วินาที
+    refreshLiveStatuses();
+    setInterval(refreshLiveStatuses, 5000);
+</script>
+{% endblock %}

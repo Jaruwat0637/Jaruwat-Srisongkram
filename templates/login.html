@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Monitor System Network Device Information</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    
+    /* สไตล์สำหรับช่องกรอกข้อมูล */
+    .input-field {
+      width: 100%;
+      padding: 0.875rem 1.25rem;
+      border-radius: 0.75rem;
+      border: 2px solid #f1f5f9;
+      background-color: #f8fafc;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: #3b82f6;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex bg-white">
+
+  <div class="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 items-center justify-center overflow-hidden">
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-white opacity-10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-pink-500 opacity-20 rounded-full blur-3xl"></div>
+    
+    <div class="relative z-10 text-center px-12">
+      <div class="w-24 h-24 bg-white/20 backdrop-blur-lg rounded-2xl mx-auto flex items-center justify-center mb-8 border border-white/30 shadow-xl">
+        <svg width="48" height="48" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-white mb-4 tracking-tight leading-snug">Monitor System<br>Network Device Information</h1>
+      <p class="text-blue-100 text-lg max-w-md mx-auto leading-relaxed">
+        ตรวจสอบสถานะอุปกรณ์ในเครือข่ายของคุณแบบเรียลไทม์ จัดการง่าย รวดเร็ว และปลอดภัย
+      </p>
+    </div>
+  </div>
+
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
+    <div class="w-full max-w-md">
+      
+      <div class="lg:hidden flex items-center gap-4 mb-8">
+        <div class="w-12 h-12 flex-shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+           <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <span class="text-lg font-bold text-gray-900 leading-tight">Monitor System<br>Network Device Information</span>
+      </div>
+
+      <div class="mb-10">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Welcome Back 👋</h2>
+        <p class="text-gray-500 text-sm">Please enter your details to sign in.</p>
+      </div>
+
+      {% if error %}
+      <div class="bg-red-50 border border-red-100 text-red-600 text-sm font-medium rounded-xl p-4 mb-6 flex items-start gap-3">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="mt-0.5 flex-shrink-0">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <!-- ส่ง username/password แบบ POST ไปให้ Flask ตรวจสอบกับ hash ในฐานข้อมูล -->
+      <form method="POST" class="space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+          <input type="text" name="username" class="input-field" placeholder="admin01" required autofocus/>
+        </div>
+        
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-semibold text-gray-700">Password</label>
+            <a href="#" class="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</a>
+          </div>
+          <input type="password" name="password" class="input-field" placeholder="••••••••" required/>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 mt-2 rounded-xl text-white font-semibold text-sm transition-all duration-200 bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-blue-100">
+          Sign In
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+</body>
+</html>

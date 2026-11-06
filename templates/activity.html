@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Activity Log</h1>
+            <p class="text-sm text-gray-500 mt-1">Track system events and user actions</p>
+        </div>
+        <button onclick="loadActivity()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 transition-colors">
+            Refresh Log
+        </button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="activity-table-body" class="divide-y divide-gray-100">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadActivity() {
+        const res = await fetch('/api/activity');
+        
+        if (res.ok) {
+            const logs = await res.json();
+            const tbody = document.getElementById('activity-table-body');
+            
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">No activity recorded yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => {
+                // เปลี่ยนสี tag ตามประเภท action ให้ดูง่าย
+                let actionColor = "bg-blue-50 text-blue-700 border-blue-100";
+                if (log.action.includes('Delete')) actionColor = "bg-red-50 text-red-700 border-red-100";
+                if (log.action.includes('Add')) actionColor = "bg-green-50 text-green-700 border-green-100";
+                if (log.action.includes('Edit')) actionColor = "bg-yellow-50 text-yellow-700 border-yellow-100";
+
+                return `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-gray-500 font-mono text-xs whitespace-nowrap">${log.timestamp || '-'}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">${log.user || 'System'}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded text-xs font-semibold border ${actionColor}">
+                            ${log.action || 'Log'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600 text-sm">${log.details || '-'}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+    }
+    
+    // โหลดข้อมูลอัตโนมัติเมื่อเปิดหน้าเว็บ
+    loadActivity();
+</script>
+{% endblock %}

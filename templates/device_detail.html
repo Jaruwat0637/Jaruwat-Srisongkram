@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+    <div class="flex items-center gap-4">
+      <a href="/devices" class="text-gray-500 hover:text-gray-800 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-white hover:bg-gray-50 border border-gray-200 shadow-sm">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </a>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">{{ device.name }}</h1>
+        <p class="text-gray-500 text-sm mt-1">IP Interfaces — {{ device.ip_address }}</p>
+      </div>
+    </div>
+    <div>
+      <span class="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide flex items-center gap-2 {% if device.status == 'Online' %}bg-green-100 text-green-700 border border-green-200{% else %}bg-red-100 text-red-700 border border-red-200{% endif %} shadow-sm">
+        <span class="w-2.5 h-2.5 rounded-full {% if device.status == 'Online' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+        {{ device.status }}
+      </span>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+    <div class="p-5 border-b border-gray-100 flex items-center gap-4 bg-gray-50">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold text-gray-800">IP Interface Table</h2>
+        <p class="text-sm text-gray-500">8 interfaces found</p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm whitespace-nowrap">
+        <thead class="text-gray-500 text-xs font-bold tracking-wider uppercase bg-white border-b border-gray-200 shadow-sm">
+          <tr>
+            <th class="px-6 py-4">Interface</th>
+            <th class="px-6 py-4">IP Address</th>
+            <th class="px-6 py-4">OK?</th>
+            <th class="px-6 py-4">Method</th>
+            <th class="px-6 py-4">Status</th>
+            <th class="px-6 py-4">Protocol</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-gray-600 font-mono text-sm">
+          
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/0</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">192.168.155.129</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">DHCP</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/1</td>
+            <td class="px-6 py-4 text-gray-400">unassigned</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/1.10</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">192.168.14.1</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/1.20</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">192.168.14.65</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/1.30</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">192.168.14.129</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/1.40</td>
+            <td class="px-6 py-4 text-blue-600 font-semibold">192.168.14.193</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+            <td class="px-6 py-4 text-green-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▲</span> up</span></td>
+          </tr>
+
+          <tr class="hover:bg-red-50/50 transition-colors bg-red-50/30">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/2</td>
+            <td class="px-6 py-4 text-gray-400">unassigned</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-red-600 font-medium"><span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> administratively down</span></td>
+            <td class="px-6 py-4 text-red-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▼</span> down</span></td>
+          </tr>
+
+          <tr class="hover:bg-red-50/50 transition-colors bg-red-50/30">
+            <td class="px-6 py-4 font-bold text-gray-800">GigabitEthernet0/3</td>
+            <td class="px-6 py-4 text-gray-400">unassigned</td>
+            <td class="px-6 py-4 text-green-600 font-sans font-bold">YES</td>
+            <td class="px-6 py-4 font-sans text-gray-500 font-medium">NVRAM</td>
+            <td class="px-6 py-4 text-red-600 font-medium"><span class="flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> administratively down</span></td>
+            <td class="px-6 py-4 text-red-600 font-medium"><span class="flex items-center gap-1.5"><span class="text-[10px]">▼</span> down</span></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

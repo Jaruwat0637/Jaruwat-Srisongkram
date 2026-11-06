@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Device Management</h1>
+            <p id="live-status-message" class="text-xs text-gray-500 mt-1">กำลังตรวจสอบสถานะ...</p>
+        </div>
+        <button onclick="openAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-blue-700">Add Device</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b">
+            <h2 class="text-sm font-bold text-gray-700">Device Status</h2>
+            <p class="text-xs text-gray-500 mt-1">สถานะ Router และ Switch ที่ตรวจสอบผ่าน </p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Device Name</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">IP Address</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Type</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Location</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="device-status-table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b">
+            <h2 class="text-sm font-bold text-gray-700">Device Management</h2>
+            <p class="text-xs text-gray-500 mt-1">ข้อมูลอุปกรณ์ทั้งหมด</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Device Name</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">IP Address</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Type</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Category</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Location</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="device-management-table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="view-device-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Device Interface Details
+            </h3>
+            <button onclick="closeViewModal()" class="text-gray-400 hover:text-red-500 transition-colors">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto">
+            <div id="view-modal-content"></div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <button onclick="closeViewModal()" class="px-4 py-2 text-sm font-medium bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="device-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden mx-4">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <h2 id="modal-title" class="text-lg font-bold text-gray-800">Add New Device</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition-colors">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="form-id">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Device Name</label>
+                <input type="text" id="form-name" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">IP Address</label>
+                <input type="text" id="form-ip" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+            </div>
+            <div id="form-parent-switch-container" hidden>
+                <label for="form-parent-switch" class="block text-sm font-semibold text-gray-700 mb-1">Connected Switch</label>
+                <select id="form-parent-switch" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="">Not specified</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Type</label>
+                    <select id="form-type" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="Router">Router</option>
+                        <option value="Switch">Switch</option>
+                        <option value="VPC">VPC</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+                    <select id="form-category" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="Router">Router</option>
+                        <option value="Core Device">Core Device</option>
+                        <option value="Access Device">Access Device</option>
+                    </select>
+                </div>
+            </div>
+            <p id="legacy-device-values-note" class="hidden text-xs text-amber-700"></p>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+                <input type="text" id="form-location" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+            <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg">Cancel</button>
+            <button onclick="saveDevice()" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Save Device</button>
+        </div>
+    </div>
+</div>
+
+<div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+        <div class="text-center">
+            <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">ยืนยันการลบอุปกรณ์?</h3>
+            <p class="text-gray-500 mb-6">ข้อมูลอุปกรณ์จะหายไปถาวร</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-xl font-bold text-gray-700 hover:bg-gray-50">ยกเลิก</button>
+                <button id="confirm-delete-btn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700">ลบออก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let devicesList = [];
+    let currentDeleteId = null;
+    let statusRefreshInProgress = false;
+    let legacyTypeValue = null;
+    let legacyCategoryValue = null;
+
+    async function loadData() {
+        const res = await fetch('/api/devices');
+        if (!res.ok) throw new Error(`Unable to load devices (${res.status})`);
+        if (res.ok) {
+            devicesList = await res.json();
+            
+            // 🌟 เรียงลำดับ: Main Router -> Core Switch -> Switch
+            devicesList.sort((a, b) => {
+                const getPrio = (dev) => {
+                    const n = dev.name.toLowerCase();
+                    const t = dev.type.toLowerCase();
+                    if (n.includes('main') || t.includes('main')) return 1;
+                    if (n.includes('core') || t.includes('core')) return 2;
+                    if (n.includes('switch') || t.includes('switch')) return 3;
+                    return 4;
+                };
+                return getPrio(a) - getPrio(b) || a.name.localeCompare(b.name, undefined, {numeric: true});
+            });
+
+            const managementTbody = document.getElementById('device-management-table-body');
+            managementTbody.innerHTML = devicesList.map(dev => `
+                <tr onclick="openViewModal(${dev.id})" class="hover:bg-gray-50 cursor-pointer transition-colors">
+                    <td class="px-6 py-4 font-bold text-gray-900">${dev.name}</td>
+                    <td class="px-6 py-4 font-mono text-sm text-blue-600">${dev.ip_address}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${dev.type}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${dev.category || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${dev.location || '-'}</td>
+                    <td class="px-6 py-4 text-right flex justify-end gap-3" onclick="event.stopPropagation()">
+                        <button onclick='editDevice(${JSON.stringify(dev)})' class="text-blue-600 font-bold hover:underline">Edit</button>
+                        <button onclick="openDeleteModal(${dev.id})" class="text-red-600 font-bold hover:underline">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            const statusTbody = document.getElementById('device-status-table-body');
+            const networkDevices = devicesList.filter(dev =>
+                ['router', 'switch'].includes(dev.type.trim().toLowerCase())
+            );
+            statusTbody.innerHTML = networkDevices.length
+                ? networkDevices.map(dev => `
+                    <tr>
+                        <td class="px-6 py-4 font-bold text-gray-900">${dev.name}</td>
+                        <td class="px-6 py-4 font-mono text-sm text-blue-600">${dev.ip_address}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${dev.type}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${dev.location || '-'}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-[10px] font-bold ${dev.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${dev.status}</span>
+                        </td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="5" class="px-6 py-6 text-center text-sm text-gray-500">ยังไม่มี Router หรือ Switch</td></tr>';
+        }
+    }
+
+    function populateParentSwitchOptions(selectedParentId = '', editingDeviceId = '') {
+        const parentSelect = document.getElementById('form-parent-switch');
+        const switches = devicesList.filter(dev =>
+            dev.type.trim().toLowerCase() === 'switch' && String(dev.id) !== String(editingDeviceId)
+        );
+        parentSelect.innerHTML = '<option value="">Not specified</option>' + switches.map(sw =>
+            `<option value="${sw.id}">${sw.name} (${sw.ip_address})</option>`
+        ).join('');
+        parentSelect.value = selectedParentId == null ? '' : String(selectedParentId);
+    }
+
+    function updateParentSwitchVisibility() {
+        const type = document.getElementById('form-type').value.trim().toLowerCase();
+        document.getElementById('form-parent-switch-container').hidden =
+            !['pc', 'vpc'].includes(type);
+    }
+
+    async function refreshLiveStatuses() {
+        if (statusRefreshInProgress || document.visibilityState !== 'visible') return;
+        statusRefreshInProgress = true;
+        try {
+            await loadData();
+            document.getElementById('live-status-message').innerText =
+                'แสดงสถานะจากผล ping  · รีเฟรชหน้าทุก 5 วินาที';
+        } catch (err) {
+            console.error('Unable to refresh device statuses:', err);
+            document.getElementById('live-status-message').innerText =
+                `ตรวจสอบสถานะไม่สำเร็จ: ${err.message}`;
+        } finally {
+            statusRefreshInProgress = false;
+        }
+    }
+
+    // 🌟 ฟังก์ชันเปิดหน้าต่างโชว์ Interface แบบ Modal 
+    function openViewModal(id) {
+        const dev = devicesList.find(d => d.id === id);
+        if (!dev) return;
+
+        let statusDisplay = `<span class="px-3 py-1 rounded-full text-xs font-bold ${dev.status === 'Online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${dev.status}</span>`;
+
+        const interfaceData = [
+            { name: "GigabitEthernet0/0", ip: dev.ip_address !== 'unassigned' ? dev.ip_address : "192.168.1.1", ok: "YES", method: "DHCP", status: dev.status === 'Online' ? "up" : "down", protocol: dev.status === 'Online' ? "up" : "down" },
+            { name: "GigabitEthernet0/1", ip: "unassigned", ok: "YES", method: "NVRAM", status: "down", protocol: "down" }
+        ];
+
+        const listItems = interfaceData.map(iface => {
+            const ipClass = iface.ip === 'unassigned' ? 'text-gray-400' : 'text-blue-600 font-medium';
+            let statusHtml = iface.status.includes('down') ? `<span class="text-red-500 font-medium">▼ ${iface.status}</span>` : `<span class="text-green-500 font-medium">▲ ${iface.status}</span>`;
+            let protocolHtml = iface.protocol === 'down' ? `<span class="text-red-500 font-medium">▼ down</span>` : `<span class="text-green-500 font-medium">▲ up</span>`;
+
+            return `
+            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <td class="py-3 px-4 font-mono text-sm">${iface.name}</td>
+                <td class="py-3 px-4 font-mono text-sm ${ipClass}">${iface.ip}</td>
+                <td class="py-3 px-4 text-sm font-bold text-green-600">${iface.ok}</td>
+                <td class="py-3 px-4 font-mono text-sm text-gray-500">${iface.method}</td>
+                <td class="py-3 px-4 text-sm">${statusHtml}</td>
+                <td class="py-3 px-4 text-sm">${protocolHtml}</td>
+            </tr>`;
+        }).join('');
+
+        const content = `
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100">
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Device Name</div>
+                    <div class="font-bold text-gray-900 text-lg">${dev.name}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">IP Address</div>
+                    <div class="text-blue-600 font-mono mt-1">${dev.ip_address}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Type / Location</div>
+                    <div class="text-gray-800 font-medium mt-1">${dev.type} <span class="text-gray-300">|</span> ${dev.location || '-'}</div>
+                </div>
+                <div class="space-y-1">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</div>
+                    <div class="mt-1">${statusDisplay}</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Interface</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">IP Address</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">OK?</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="py-3 px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Protocol</th>
+                        </tr>
+                    </thead>
+                    <tbody>${listItems}</tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('view-modal-content').innerHTML = content;
+        document.getElementById('view-device-modal').classList.replace('hidden', 'flex');
+    }
+
+    function closeViewModal() {
+        document.getElementById('view-device-modal').classList.replace('flex', 'hidden');
+    }
+
+    function openAddModal() {
+        document.getElementById('modal-title').innerText = 'Add New Device';
+        document.getElementById('form-id').value = '';
+        document.getElementById('form-name').value = '';
+        document.getElementById('form-ip').value = '';
+        document.getElementById('form-type').disabled = false;
+        document.getElementById('form-category').disabled = false;
+        document.getElementById('form-type').parentElement.hidden = false;
+        document.getElementById('form-category').parentElement.hidden = false;
+        document.getElementById('form-type').value = 'Router';
+        populateParentSwitchOptions();
+        updateParentSwitchVisibility();
+        document.getElementById('form-category').value = 'Access Device';
+        document.getElementById('form-location').value = 'Server Room';
+        legacyTypeValue = null;
+        legacyCategoryValue = null;
+        document.getElementById('legacy-device-values-note').classList.add('hidden');
+        document.getElementById('device-modal').classList.replace('hidden', 'flex');
+    }
+
+    function editDevice(dev) {
+        document.getElementById('modal-title').innerText = 'Edit Device';
+        document.getElementById('form-id').value = dev.id;
+        document.getElementById('form-name').value = dev.name;
+        document.getElementById('form-ip').value = dev.ip_address;
+        const typeSelect = document.getElementById('form-type');
+        const categorySelect = document.getElementById('form-category');
+        const supportedTypes = ['Router', 'Switch', 'PC', 'VPC'];
+        const supportedCategories = ['Router', 'Core Device', 'Access Device'];
+        legacyTypeValue = supportedTypes.includes(dev.type) ? null : (dev.type || null);
+        legacyCategoryValue = supportedCategories.includes(dev.category) ? null : (dev.category || null);
+        typeSelect.disabled = legacyTypeValue !== null;
+        categorySelect.disabled = legacyCategoryValue !== null;
+        typeSelect.parentElement.hidden = legacyTypeValue !== null;
+        categorySelect.parentElement.hidden = legacyCategoryValue !== null;
+        if (legacyTypeValue === null) typeSelect.value = dev.type || 'Router';
+        if (legacyCategoryValue === null) categorySelect.value = dev.category || 'Access Device';
+        const legacyValuesNote = document.getElementById('legacy-device-values-note');
+        const legacyValues = [
+            legacyTypeValue !== null ? `ประเภทเดิม: ${legacyTypeValue}` : '',
+            legacyCategoryValue !== null ? `หมวดเดิม: ${legacyCategoryValue}` : ''
+        ].filter(Boolean);
+        legacyValuesNote.textContent = legacyValues.length
+            ? `${legacyValues.join(' · ')} (คงค่าเดิมไว้ ไม่สามารถเลือกสร้างใหม่ได้)`
+            : '';
+        legacyValuesNote.classList.toggle('hidden', legacyValues.length === 0);
+        document.getElementById('form-location').value = dev.location || 'Server Room';
+        populateParentSwitchOptions(dev.parent_id, dev.id);
+        updateParentSwitchVisibility();
+        document.getElementById('device-modal').classList.replace('hidden', 'flex');
+    }
+
+    function closeModal() { document.getElementById('device-modal').classList.replace('flex', 'hidden'); }
+
+    async function saveDevice() {
+        const id = document.getElementById('form-id').value;
+        const existingDevice = devicesList.find(dev => String(dev.id) === String(id));
+        const payload = {
+            name: document.getElementById('form-name').value,
+            ipAddress: document.getElementById('form-ip').value,
+            type: legacyTypeValue ?? (document.getElementById('form-type').value || existingDevice?.type),
+            category: legacyCategoryValue ?? document.getElementById('form-category').value,
+            location: document.getElementById('form-location').value,
+            parentId: document.getElementById('form-parent-switch').value || null
+        };
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/devices/${id}` : '/api/devices';
+        try {
+            const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error(`Unable to save device (${res.status})`);
+            closeModal();
+            await loadData();
+        } catch (err) {
+            console.error('Unable to save device:', err);
+            alert(`บันทึกอุปกรณ์ไม่สำเร็จ: ${err.message}`);
+        }
+    }
+
+    function openDeleteModal(id) {
+        currentDeleteId = id;
+        document.getElementById('delete-modal').classList.remove('hidden');
+        document.getElementById('confirm-delete-btn').onclick = confirmDelete;
+    }
+
+    function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
+
+    async function confirmDelete() {
+        const res = await fetch(`/api/devices/${currentDeleteId}`, { method: 'DELETE' });
+        if (res.ok) { closeDeleteModal(); loadData(); }
+    }
+
+    refreshLiveStatuses();
+    setInterval(refreshLiveStatuses, 5000);
+    document.getElementById('form-type').addEventListener('change', updateParentSwitchVisibility);
+</script>
+{% endblock %}
